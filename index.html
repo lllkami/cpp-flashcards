@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Глоссарий C++ (Разделы 1–3) — Карточки для запоминания</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              850: '#151e2e',
+              950: '#090d16'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .perspective-1000 {
+      perspective: 1200px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-30">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-lg shadow-lg shadow-indigo-600/30">
+          C++
+        </div>
+        <div>
+          <h1 class="font-bold text-base sm:text-lg text-white leading-tight">Глоссарий C++: Разделы 1–3</h1>
+          <p class="text-xs text-slate-400">Все <span id="total-terms-badge">210</span> определений из файла лекций 2026–2027</p>
+        </div>
+      </div>
+
+      <!-- Mode Switcher & Stats -->
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div class="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+          <button id="mode-cards-btn" onclick="setMode('cards')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-indigo-600 text-white shadow transition">
+            Карточки
+          </button>
+          <button id="mode-quiz-btn" onclick="setMode('quiz')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition">
+            Тест
+          </button>
+          <button id="mode-list-btn" onclick="setMode('list')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition">
+            Весь список
+          </button>
+        </div>
+
+        <button onclick="resetProgress()" title="Сбросить выученные" class="px-3 py-1.5 rounded-xl border border-slate-700 hover:border-rose-500/50 hover:bg-rose-500/10 text-xs text-slate-300 hover:text-rose-300 transition">
+          Сбросить прогресс
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filters & Progress Bar -->
+  <section class="bg-slate-900/40 border-b border-slate-800/80">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+        <!-- Topic Select -->
+        <div class="md:col-span-5">
+          <label class="block text-[11px] uppercase tracking-wider text-slate-400 mb-1">Тема / Раздел</label>
+          <select id="topic-select" onchange="applyFilters()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+            <option value="all">Все разделы и темы</option>
+          </select>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="md:col-span-3">
+          <label class="block text-[11px] uppercase tracking-wider text-slate-400 mb-1">Статус карточек</label>
+          <select id="status-select" onchange="applyFilters()" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+            <option value="all">Все карточки</option>
+            <option value="unlearned">Только невыученные</option>
+            <option value="hard">Повторить (сложные)</option>
+            <option value="known">Выученные</option>
+          </select>
+        </div>
+
+        <!-- Search Input -->
+        <div class="md:col-span-4">
+          <label class="block text-[11px] uppercase tracking-wider text-slate-400 mb-1">Поиск по терминам и тексту</label>
+          <div class="relative">
+            <input id="search-input" type="text" oninput="applyFilters()" placeholder="Например: constexpr, стек, итератор..." class="w-full bg-slate-800 border border-slate-700 rounded-xl pl-3 pr-8 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500">
+            <button onclick="clearSearch()" id="clear-search-btn" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-white text-xs">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Stats -->
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-slate-400">
+        <div class="flex items-center gap-4">
+          <span>Выбрано: <strong id="filtered-count" class="text-white">0</strong></span>
+          <span class="text-emerald-400">Знаю: <strong id="known-count">0</strong></span>
+          <span class="text-amber-400">Повторить: <strong id="hard-count">0</strong></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="shuffleDeck()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1">
+            <span>🔀</span> Перемешать
+          </button>
+          <button onclick="toggleReverseCards()" id="reverse-btn" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+            Сначала: Термин
+          </button>
+        </div>
+      </div>
+
+      <!-- Visual Progress bar -->
+      <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden flex">
+        <div id="progress-known-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 0%"></div>
+        <div id="progress-hard-bar" class="bg-amber-500 h-full transition-all duration-300" style="width: 0%"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-5xl w-full mx-auto px-4 py-6 flex flex-col justify-center">
+
+    <!-- 1. FLASHCARDS MODE -->
+    <div id="view-cards" class="flex flex-col items-center w-full">
+      <div id="empty-state" class="hidden text-center py-16 bg-slate-900/60 border border-slate-800 rounded-2xl w-full">
+        <p class="text-lg font-medium text-slate-300 mb-2">Нет карточек по выбранным фильтрам</p>
+        <p class="text-sm text-slate-500 mb-4">Попробуйте изменить фильтр статуса или очистить строку поиска.</p>
+        <button onclick="resetFilters()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition">
+          Показать все карточки
+        </button>
+      </div>
+
+      <div id="card-container" class="w-full max-w-3xl">
+        <!-- Counter & Topic Pill -->
+        <div class="flex items-center justify-between mb-3 px-1">
+          <span id="card-topic-badge" class="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+            Тема
+          </span>
+          <div class="flex items-center gap-2">
+            <span id="card-status-badge" class="text-xs px-2 py-0.5 rounded-md hidden"></span>
+            <span id="card-index-text" class="text-sm font-mono text-slate-400">1 / 210</span>
+          </div>
+        </div>
+
+        <!-- 3D Flip Card -->
+        <div onclick="flipCard()" class="perspective-1000 w-full h-80 sm:h-96 cursor-pointer select-none group">
+          <div id="flashcard-inner" class="relative w-full h-full transform-style-3d">
+            
+            <!-- Front Side -->
+            <div class="absolute inset-0 backface-hidden bg-gradient-to-br from-slate-900 to-slate-850 border-2 border-slate-700/80 group-hover:border-indigo-500/60 rounded-3xl p-6 sm:p-10 flex flex-col justify-between shadow-2xl transition-colors">
+              <div class="flex justify-between items-center text-xs text-slate-400">
+                <span id="front-label" class="uppercase tracking-widest font-semibold text-indigo-400">Термин</span>
+                <span id="front-section" class="font-mono text-slate-500">§ 1.1</span>
+              </div>
+              <div class="my-auto text-center overflow-y-auto max-h-56 px-2">
+                <h2 id="card-front-text" class="text-2xl sm:text-3xl font-bold text-white leading-snug break-words"></h2>
+              </div>
+              <div class="text-center text-xs text-slate-500">
+                Нажмите на карточку или клавишу <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-300">Пробел</kbd>, чтобы перевернуть
+              </div>
+            </div>
+
+            <!-- Back Side -->
+            <div class="absolute inset-0 backface-hidden rotate-y-180 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/40 border-2 border-indigo-500/50 rounded-3xl p-6 sm:p-10 flex flex-col justify-between shadow-2xl">
+              <div class="flex justify-between items-center text-xs border-b border-slate-800 pb-3">
+                <span id="back-term-reminder" class="font-bold text-indigo-300 truncate max-w-[75%]"></span>
+                <span id="back-section" class="font-mono text-slate-400 shrink-0"></span>
+              </div>
+              <div class="my-auto overflow-y-auto max-h-60 pr-1">
+                <p id="card-back-text" class="text-base sm:text-xl text-slate-100 leading-relaxed whitespace-pre-line"></p>
+              </div>
+              <div class="text-center text-xs text-slate-400 pt-2 border-t border-slate-800/80">
+                Оцените знание кнопками ниже или клавишами <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded">1</kbd> (Повторить) / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded">2</kbd> (Знаю)
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <button onclick="prevCard()" class="order-1 px-4 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-sm transition flex items-center justify-center gap-2">
+            <span>←</span> Назад
+          </button>
+
+          <button onclick="markCard('hard')" class="order-3 sm:order-2 px-4 py-3 rounded-2xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-medium text-sm transition flex items-center justify-center gap-1.5">
+            <span>↻</span> Повторить (1)
+          </button>
+
+          <button onclick="markCard('known')" class="order-4 sm:order-3 px-4 py-3 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-medium text-sm transition flex items-center justify-center gap-1.5">
+            <span>✓</span> Знаю (2)
+          </button>
+
+          <button onclick="nextCard()" class="order-2 sm:order-4 px-4 py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 font-medium text-sm transition flex items-center justify-center gap-2">
+            Вперёд <span>→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. QUIZ MODE -->
+    <div id="view-quiz" class="hidden w-full max-w-3xl mx-auto">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+          <span id="quiz-topic" class="text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20"></span>
+          <span id="quiz-score" class="text-xs font-mono text-slate-400">Верно: 0 / 0</span>
+        </div>
+
+        <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Определение:</p>
+        <div id="quiz-question" class="text-base sm:text-lg text-white bg-slate-950/70 border border-slate-800 rounded-2xl p-5 mb-6 leading-relaxed"></div>
+
+        <p class="text-xs uppercase tracking-wider text-slate-400 mb-3">Выберите правильный термин:</p>
+        <div id="quiz-options" class="grid grid-cols-1 gap-3"></div>
+
+        <div id="quiz-feedback" class="hidden mt-5 p-4 rounded-xl text-sm"></div>
+
+        <div class="mt-6 flex justify-end">
+          <button onclick="generateQuizQuestion()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition">
+            Следующий вопрос →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. FULL LIST MODE -->
+    <div id="view-list" class="hidden w-full">
+      <div id="list-container" class="space-y-3"></div>
+    </div>
+
+  </main>
+
+  <script>
+    // Complete dataset of all 210 terms from the attached PDF (Sections 1, 2, 3)
+    const RAW_TERMS = [
+      // Тема 1.1. Базовые понятия языка С++
+      { t: "auto", d: "Спецификатор типа, при котором тип переменной автоматически выводится компилятором из её инициализатора вместо явного указания типа программистом.", s: "§ 1.1.2.7", c: "1.1. Базовые понятия языка С++" },
+      { t: "const", d: "Квалификатор (cv-qualifier), объявляющий переменную константой: после инициализации её значение изменить нельзя. Само значение при этом может вычисляться во время выполнения программы (runtime).", s: "§ 1.1.2.5", c: "1.1. Базовые понятия языка С++" },
+      { t: "constexpr", d: "Спецификатор, требующий, чтобы значение переменной было вычислено на этапе компиляции (compile-time): инициализатор обязан быть константным выражением, иначе компилятор выдаёт ошибку. Любая constexpr-переменная одновременно является и const.", s: "§ 1.1.2.5", c: "1.1. Базовые понятия языка С++" },
+      { t: "sizeof", d: "Унарный оператор, возвращающий размер типа или объекта в байтах — точнее, в единицах размера char.", s: "§ 1.1.2.1.3", c: "1.1. Базовые понятия языка С++" },
+      { t: "std::intmax_t, std::uintmax_t", d: "Самый широкий знаковый (соответственно беззнаковый) целый тип, поддерживаемый реализацией: в него помещается значение любого другого целого типа этой реализации.", s: "§ 1.1.2.1.3", c: "1.1. Базовые понятия языка С++" },
+      { t: "std::nullptr_t", d: "Тип литерала нулевого указателя nullptr. Это отдельный, самостоятельный тип данных в C++ (C++11), который сам по себе не является указателем, используется специально для представления типа литерала nullptr.", s: "§ 1.1.2.1", c: "1.1. Базовые понятия языка С++" },
+      { t: "std::size_t", d: "Беззнаковый целый тип, способный представить размер любого объекта в памяти данной платформы. Объявлен в заголовочном файле <cstddef> и др.", s: "§ 1.1.2.1.3", c: "1.1. Базовые понятия языка С++" },
+      { t: "void", d: "Тип, используемый для указания на отсутствие информации. Например, как тип возвращаемого значения функции, которая ничего не возвращает.", s: "§ 1.1.2.1", c: "1.1. Базовые понятия языка С++" },
+      { t: "Адрес (address)", d: "Номер байта памяти; адрес объекта — адрес первого из байтов, которые он занимает.", s: "§ 1.1.2.6.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Алфавит языка (character set)", d: "Конечный набор допустимых символов, из которых строятся все конструкции языка: буквы латинского алфавита (a–z, A–Z), цифры (0–9), знаки препинания и специальные символы ({ } ( ) [ ] ; , . : ? ~ | / \\ ^ ! < > + - * % & # и др.), а также пробельные символы (пробел, табуляция, перевод строки).", s: "§ 1.1.1.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Библиотека (library)", d: "Набор готовых функций, классов и других средств языка, оформленных для многократного использования.", s: "§ 1.1.1.5", c: "1.1. Базовые понятия языка С++" },
+      { t: "Взятие адреса (address-of)", d: "Операция &объект, применённая к объекту, возвращает адрес этого объекта в памяти — значение, которое можно сохранить в указателе.", s: "§ 1.1.2.6.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Заголовочный файл (header file)", d: "Файл с объявлениями средств библиотеки (функций, классов, констант), который подключается к программе директивой #include и делает эти средства доступными в ней.", s: "§ 1.1.1.5", c: "1.1. Базовые понятия языка С++" },
+      { t: "Заполняющие биты (padding bits)", d: "Биты в представлении объекта, которые не участвуют в представлении значения: они занимают память, но ничего не хранят.", s: "§ 1.1.2.1.3", c: "1.1. Базовые понятия языка С++" },
+      { t: "Затухание массива (array-to-pointer decay)", d: "Автоматическое неявное преобразование выражения типа «массив из N элементов типа T» в указатель на первый элемент этого массива (тип T*); выполняется компилятором без каких-либо указаний в коде — в частности при передаче массива в функцию и при присваивании его указателю.", s: "§ 1.1.2.6.6", c: "1.1. Базовые понятия языка С++" },
+      { t: "Идентификатор (identifier)", d: "Строка буквенно-цифровых символов и символа подчёркивания _, начинающаяся с буквы или _, — имя переменной, функции, типа или другой сущности программы.", s: "§ 1.1.2.3", c: "1.1. Базовые понятия языка С++" },
+      { t: "Инициализация (initialization)", d: "Задание переменной начального значения в момент её создания.", s: "§ 1.1.2.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Интегральные типы (integral types)", d: "Обобщённое название целочисленных типов данных: логический тип (bool), символьные типы (char, signed char, unsigned char, char8_t, char16_t, char32_t, wchar_t), знаковые целые (signed char, short, int, long, long long) и беззнаковые целые типы. Типы signed char и unsigned char попадают сразу в две группы (символьные и самые узкие целые).", s: "§ 1.1.2.1", c: "1.1. Базовые понятия языка С++" },
+      { t: "Ключевое слово (keyword)", d: "Зарезервированный языком идентификатор, который нельзя использовать в качестве имени переменной, функции, класса и т. д. — например, int, if, return, class, const.", s: "§ 1.1.2.3", c: "1.1. Базовые понятия языка С++" },
+      { t: "Комментарий (comment)", d: "Фрагмент текста программы, который игнорируется компилятором и предназначен для человека — пояснение к коду для его читателей (в том числе для будущего себя).", s: "§ 1.1.1.6", c: "1.1. Базовые понятия языка С++" },
+      { t: "Константное выражение (constant expression)", d: "Выражение, значение которого может быть полностью вычислено компилятором на этапе компиляции.", s: "§ 1.1.2.5", c: "1.1. Базовые понятия языка С++" },
+      { t: "Лексема", d: "Минимальная значащая последовательность символов исходного текста программы: конкретная цепочка символов.", s: "§ 1.1.1.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Лексика языка (лексические правила, lexical rules)", d: "Правила, определяющие, как из символов алфавита складываются минимальные значащие единицы языка — лексемы (токены).", s: "§ 1.1.1.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Литерал (literal)", d: "Запись конкретного значения непосредственно в тексте программы; тип литерала определяется формой его записи: 42 — int, 7.5 — double, 'a' — char.", s: "§ 1.1.2.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Логический тип bool (boolean type)", d: "Тип для представления истинности: имеет ровно два значения — true (истина) и false (ложь).", s: "§ 1.1.2.1.1", c: "1.1. Базовые понятия языка С++" },
+      { t: "Магическое число (magic number)", d: "Числовой литерал, записанный непосредственно в коде «как есть», без имени, смысл которого не виден из контекста.", s: "§ 1.1.2.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Макрос (macro)", d: "Именованный фрагмент текста, определяемый директивой препроцессора #define: препроцессор заменяет каждое вхождение имени макроса его текстом ещё до начала компиляции. Чисто текстовая подстановка: у него нет ни типа, ни области видимости.", s: "§ 1.1.1.5", c: "1.1. Базовые понятия языка С++" },
+      { t: "Массив (array)", d: "Набор из фиксированного числа элементов одного типа, расположенных в памяти подряд; объявляется как тип имя[количество].", s: "§ 1.1.2.6.6", c: "1.1. Базовые понятия языка С++" },
+      { t: "Нулевой указатель (null pointer)", d: "Значение указателя, которое не указывает ни на какой объект или функцию. Получается преобразованием nullptr (или литерала 0) к типу указателя, а также инициализацией пустыми фигурными скобками: int* p{};.", s: "§ 1.1.2.6.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Объявление (declaration)", d: "Конструкция языка, которая вводит имя сущности в программу и связывает это имя с типом.", s: "§ 1.1.2.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Объявление (прототип) функции (function declaration, prototype)", d: "Предварительное описание функции для компилятора: тип возвращаемого значения, имя и список параметров, завершённые точкой с запятой без тела (имена параметров можно опустить).", s: "§ 1.1.1.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Оператор доступа к члену (dot operator)", d: "Оператор . (точка): запись объект.поле обращается к полю данного объекта.", s: "§ 1.1.2.6.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Оператор доступа к члену через указатель (arrow operator)", d: "Оператор ->: запись ptr->поле равносильна (*ptr).поле — разыменование указателя и обращение к полю объекта, на который он указывает.", s: "§ 1.1.2.6.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Определение (definition)", d: "Объявление, которое не только вводит имя, но и создаёт саму сущность: для переменной — выделяет под неё память.", s: "§ 1.1.2.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Определение (реализация) функции (function definition)", d: "Полное описание функции: заголовок вместе с телом в фигурных скобках. Определение одновременно является и объявлением. Каждая функция определяется в программе ровно один раз.", s: "§ 1.1.1.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Переменная (variable)", d: "Именованная область памяти, содержимое которой интерпретируется в соответствии с её типом.", s: "§ 1.1.2.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Перечисление (enumeration, enum)", d: "Пользовательский тип, множество допустимых значений которого задано явным списком именованных констант-перечислителей (enumerator); в памяти значение хранится как целое число.", s: "§ 1.1.2.6.1", c: "1.1. Базовые понятия языка С++" },
+      { t: "Присваивание (assignment)", d: "Изменение значения уже существующей переменной оператором =.", s: "§ 1.1.2.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Программирование (programming)", d: "Процесс создания и изменения компьютерных программ и алгоритмов.", s: "§ 1.1.1.1", c: "1.1. Базовые понятия языка С++" },
+      { t: "Разыменование (dereference)", d: "Операция *указатель, применённая к указателю — обращение к объекту по адресу, хранящемуся в указателе.", s: "§ 1.1.2.6.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Свойства типов (type traits)", d: "Шаблоны из заголовка <type_traits>, которые на этапе компиляции отвечают на вопросы о типе или строят из него новый тип. Имя с окончанием _v — это bool-значение («является ли...»), с окончанием _t — сам тип-результат.", s: "§ 1.1.2.6.5", c: "1.1. Базовые понятия языка С++" },
+      { t: "Семантика языка (semantics)", d: "Совокупность правил, определяющих смысл синтаксически правильных конструкций — какие действия выполнит программа при их исполнении.", s: "§ 1.1.1.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Синтаксис языка (syntax)", d: "Совокупность формальных правил, определяющих, какие последовательности символов алфавита образуют допустимые (правильно построенные) конструкции языка — операторы, выражения, объявления.", s: "§ 1.1.1.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Ссылка (reference)", d: "Альтернативное имя (alias, псевдоним) уже существующего объекта. Объявляется символом & в типе, обязательно инициализируется в момент объявления и до конца жизни остаётся связанной с тем же объектом.", s: "§ 1.1.2.6.3", c: "1.1. Базовые понятия языка С++" },
+      { t: "Стандартная библиотека С++ (standard library)", d: "Набор готовых средств, описанных в стандарте языка и поставляемых с каждым компилятором. Доступ открывается подключением соответствующего заголовочного файла; почти все имена живут в пространстве имён std.", s: "§ 1.1.1.5", c: "1.1. Базовые понятия языка С++" },
+      { t: "Структура (structure, struct)", d: "Пользовательский тип данных, объявление которого описывает поля (свойства) объектов этого типа, возможно разных типов.", s: "§ 1.1.2.6.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Сырой строковый литерал (raw string literal)", d: "Строковый литерал вида R\"(...)\", в котором все знаки между \"( и )\" входят в строку без изменений: управляющие последовательности не действуют, кавычки и обратная косая черта не экранируются.", s: "§ 1.1.2.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Тип данных (data type)", d: "Характеристика данных, определяющая множество допустимых значений данных, набор применимых к ним операций и объём памяти для хранения.", s: "§ 1.1.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Типы с плавающей точкой (floating-point types)", d: "Типы для представления вещественных чисел: float, double, long double.", s: "§ 1.1.2.1", c: "1.1. Базовые понятия языка С++" },
+      { t: "Токен (token)", d: "Результат распознавания лексемы лексическим анализатором компилятора: пара «категория + значение».", s: "§ 1.1.1.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Токенизация (лексический анализ, lexical analysis)", d: "Процесс разбиения исходного текста программы на токены.", s: "§ 1.1.1.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Точка входа (entry point)", d: "Место в программе, с которого начинается её выполнение после запуска. Устройство точки входа зависит от языка программирования и платформы.", s: "§ 1.1.1.3", c: "1.1. Базовые понятия языка С++" },
+      { t: "Указатель (pointer)", d: "Переменная, значением которой является адрес другого объекта в памяти. Объявляется символом * в типе.", s: "§ 1.1.2.6.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Управляющая последовательность (escape sequence)", d: "Запись из обратной косой черты и следующего за ней знака, обозначающая один символ, который иначе нельзя записать в литерале напрямую: '\\n' — перевод строки, '\\t' — табуляция.", s: "§ 1.1.2.2", c: "1.1. Базовые понятия языка С++" },
+      { t: "Утверждение (assertion)", d: "Условие, которое, по замыслу программиста, обязано быть истинным в данной точке программы. Проверка assert(условие) из <cassert> при ложном условии немедленно завершает программу с сообщением.", s: "§ 1.1.1.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Функция", d: "Сущность C++, которая связывает последовательность инструкций (тело функции) с именем и списком нулевых или более параметров функции.", s: "§ 1.1.1.4", c: "1.1. Базовые понятия языка С++" },
+      { t: "Язык С++", d: "Компилируемый, статически типизированный язык программирования общего назначения.", s: "§ 1.1.1.1", c: "1.1. Базовые понятия языка С++" },
+      { t: "Язык программирования (programming language)", d: "Формальный язык, предназначенный для записи компьютерных программ.", s: "§ 1.1.1.1", c: "1.1. Базовые понятия языка С++" },
+
+      // Тема 1.2. Инструкции (statements) C++
+      { t: "lvalue", d: "Выражение, обозначающее объект в памяти, который существует и после вычисления выражения: имя переменной n, результат присваивания n = 5, префиксный инкремент ++i.", s: "§ 1.2.3.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "rvalue", d: "Выражение, значение которого временно и не связано с объектом, существующим после вычисления: литерал 42, n + 1, постфиксный инкремент i++, вызов функции, возвращающей значение.", s: "§ 1.2.3.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Арифметические операторы (arithmetic operators)", d: "Операторы, выполняющие арифметические действия: аддитивные + и -, мультипликативные *, / и % (остаток от деления), а также унарные + и -.", s: "§ 1.2.3.3.3", c: "1.2. Инструкции (statements) C++" },
+      { t: "Ассоциативность (associativity)", d: "Правило, определяющее группировку операторов одинакового приоритета, стоящих подряд: слева направо (левая ассоциативность) или справа налево (правая ассоциативность).", s: "§ 1.2.3.4", c: "1.2. Инструкции (statements) C++" },
+      { t: "Атомарный блок (atomic block)", d: "Блок, который выполняется как настоящая транзакция (atomic_noexcept, atomic_cancel, atomic_commit). Три формы различаются поведением при вылете исключения; внутри разрешены только transaction_safe функции.", s: "§ 1.2.10", c: "1.2. Инструкции (statements) C++" },
+      { t: "Битовая маска (bit mask)", d: "Целое число, в двоичной записи которого единицами отмечены биты, над которыми выполняется операция; маска выделяет эти биты в другом числе.", s: "§ 1.2.3.3.3", c: "1.2. Инструкции (statements) C++" },
+      { t: "Блок try (try block)", d: "Инструкция, которая выполняет составную инструкцию и передаёт исключение, возникшее при её выполнении, соответствующему обработчику catch (включая универсальный catch (...) в самом конце).", s: "§ 1.2.9", c: "1.2. Инструкции (statements) C++" },
+      { t: "Выражение (expression)", d: "Последовательность операторов и операндов, задающая вычисление. Вычисление выражения может дать значение (value) и может иметь побочный эффект.", s: "§ 1.2.3.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Выражение с отброшенным значением (discarded-value expression)", d: "Выражение, которое вычисляется только ради побочных эффектов: его значение вычисляется и отбрасывается (например, выражение любой инструкции-выражения и левый операнд оператора запятая).", s: "§ 1.2.3.1", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инкремент и декремент (increment and decrement)", d: "Унарные операторы ++ и --, увеличивающие или уменьшающие значение переменной на единицу. Существуют в префиксной (++i) и постфиксной (i++) формах.", s: "§ 1.2.3.3.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция (statement)", d: "Элемент программы, задающий действие, которое выполняется при её работе. Инструкции выполняются последовательно, одна за другой. Простейшая форма — выражение с точкой с запятой.", s: "§ 1.2.1", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция break (break statement)", d: "Инструкция перехода, которая прерывает выполнение ближайшего охватывающего цикла (for, while, do-while) или инструкции switch; управление передаётся инструкции, следующей за ними.", s: "§ 1.2.5.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция goto (goto statement)", d: "Инструкция безусловной передачи управления на помеченную инструкцию той же функции: goto метка;.", s: "§ 1.2.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция if (if statement)", d: "Инструкция выбора, которая выполняет одну из двух ветвей в зависимости от значения условия: первую при true, ветвь else (если есть) — при false. С C++17 поддерживает форму if (инициализация; условие).", s: "§ 1.2.5.1", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция switch (switch statement)", d: "Инструкция выбора, передающая управление одной из ветвей, помеченных метками case (константное выражение), в зависимости от значения условия; если ни одна метка не подошла — ветви default.", s: "§ 1.2.5.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция объявления (declaration statement)", d: "Инструкция, которая вводит в блок один или несколько идентификаторов. Кроме имени и типа она задаёт сущности область видимости (scope) и связывание (linkage).", s: "§ 1.2.8", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция перехода (jump statement)", d: "Инструкция, безусловно передающая управление в другую точку программы: break;, continue;, return выражение;, goto метка;.", s: "§ 1.2.7", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция расширения (expansion statement)", d: "Инструкция template for (объявление : инициализатор), которую компилятор заменяет последовательностью копий тела — по одной на каждый элемент инициализатора (элементы могут иметь разные типы).", s: "§ 1.2.11", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция-выражение (expression statement)", d: "Выражение, за которым следует точка с запятой: выражение;.", s: "§ 1.2.3.1", c: "1.2. Инструкции (statements) C++" },
+      { t: "Инструкция-утверждение (assertion statement)", d: "Инструкция contract_assert(условие);, которая проверяет, истинно ли условие-предикат в этой точке выполнения. Ставится в любом месте тела функции.", s: "§ 1.2.12", c: "1.2. Инструкции (statements) C++" },
+      { t: "Короткое замыкание (short-circuit evaluation)", d: "Правило вычисления операторов && и ||: сначала вычисляется левый операнд; в a && b при ложном a, а в a || b при истинном a правый операнд не вычисляется вовсе, поскольку результат уже известен.", s: "§ 1.2.3.3.5", c: "1.2. Инструкции (statements) C++" },
+      { t: "Логические операторы (logical operators)", d: "Бинарные && (И), || (ИЛИ) и унарный ! (НЕ). Операнды преобразуются к типу bool (ноль — false, любое другое число — true), результат имеет тип bool.", s: "§ 1.2.3.3.5", c: "1.2. Инструкции (statements) C++" },
+      { t: "Метка (label)", d: "Имя, приписанное инструкции и обозначающее точку программы, на которую может быть передано управление. Никакого действия метка не выполняет.", s: "§ 1.2.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Неявное преобразование (implicit conversion)", d: "Преобразование типа, которое компилятор выполняет автоматически, когда выражение одного типа стоит там, где требуется значение другого типа.", s: "§ 1.2.3.5", c: "1.2. Инструкции (statements) C++" },
+      { t: "Операнд (operand)", d: "Значение, над которым выполняется операция. В записи y + 1 операнды сложения — y и 1.", s: "§ 1.2.3.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Оператор (operator)", d: "Символ (+, ==), последовательность символов (<<=) или ключевое слово (sizeof), обозначающие операцию над одним, двумя или тремя операндами.", s: "§ 1.2.3.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Оператор запятая (comma operator)", d: "Оператор последовательного вычисления ,: сначала вычисляется левый операнд, его значение отбрасывается, затем вычисляется правый; значение всего выражения — значение правого операнда.", s: "§ 1.2.3.3.6", c: "1.2. Инструкции (statements) C++" },
+      { t: "Оператор присваивания (assignment operator)", d: "Оператор, записывающий значение правого операнда в объект, обозначенный левым операндом. Простое присваивание =; составные: +=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=.", s: "§ 1.2.3.3.1", c: "1.2. Инструкции (statements) C++" },
+      { t: "Операторы сравнения (comparison operators)", d: "Операторы ==, !=, <, >, <=, >= (результат типа bool), а также оператор трёхстороннего сравнения <=> (C++20), результат которого — категория упорядочения (например, std::strong_ordering).", s: "§ 1.2.3.3.4", c: "1.2. Инструкции (statements) C++" },
+      { t: "Первичное выражение (primary expression)", d: "Простейшее выражение, из которого строятся остальные: литерал (42, \"Hello\"), имя (n, std::cout) или любое выражение, заключённое в круглые скобки.", s: "§ 1.2.3.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Побитовые операторы (bitwise operators)", d: "Операторы, выполняющие действия над отдельными битами двоичного представления целых операндов: бинарные & (И), | (ИЛИ), ^ (исключающее ИЛИ), унарный ~ (НЕ) и операторы сдвига <<, >>.", s: "§ 1.2.3.3.3", c: "1.2. Инструкции (statements) C++" },
+      { t: "Побочный эффект (side effect)", d: "Изменение состояния программы или её окружения при вычислении выражения, помимо получения его значения: изменение переменной, ввод/вывод, вызов функции с такими действиями.", s: "§ 1.2.3.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Помеченная инструкция (labeled statement)", d: "Инструкция, которой предшествует метка: метка: инструкция.", s: "§ 1.2.2", c: "1.2. Инструкции (statements) C++" },
+      { t: "Порядок вычисления (order of evaluation)", d: "Последовательность, в которой во время выполнения вычисляются операнды выражения и выполняются их побочные эффекты. Для большинства операторов C++ этот порядок стандартом не определён (unspecified).", s: "§ 1.2.3.4", c: "1.2. Инструкции (statements) C++" },
+      { t: "Преобразование типа (type conversion)", d: "Получение по значению одного типа соответствующего значения другого типа, например по значению 7 типа int — значения 7.0 типа double.", s: "§ 1.2.3.5", c: "1.2. Инструкции (statements) C++" },
+      { t: "Приоритет оператора (operator precedence)", d: "Правило, определяющее, какой из операторов применяется к операнду первым при отсутствии скобок: операнды связываются в первую очередь с оператором более высокого приоритета.", s: "§ 1.2.3.4", c: "1.2. Инструкции (statements) C++" },
+      { t: "Пустая инициализация (vacuous initialization)", d: "Инициализация по умолчанию, при которой не выполняется никаких действий: переменная объявлена без инициализатора, а для объекта класса выбирается тривиальный конструктор.", s: "§ 1.2.8.1", c: "1.2. Инструкции (statements) C++" },
+      { t: "Пустая инструкция (null statement)", d: "Инструкция-выражение без выражения, состоящая из одной точки с запятой: ;.", s: "§ 1.2.3.1", c: "1.2. Инструкции (statements) C++" },
+      { t: "Расширяющее преобразование (widening conversion)", d: "Преобразование к типу, который может представить любое значение исходного типа, поэтому значение не изменяется (например, int -> long long, float -> double).", s: "§ 1.2.3.5", c: "1.2. Инструкции (statements) C++" },
+      { t: "Синхронизированный блок (synchronized block)", d: "Самый мягкий из блоков (synchronized составная-инструкция): выполняется так, как если бы все такие блоки в программе стояли в одной общей очереди. Транзакцией не является, внутри можно вызывать любые функции.", s: "§ 1.2.10", c: "1.2. Инструкции (statements) C++" },
+      { t: "Составная инструкция (compound statement)", d: "Последовательность инструкций, заключённая в фигурные скобки { ... } (блок). С C++23 допускает метки в конце блока.", s: "§ 1.2.4", c: "1.2. Инструкции (statements) C++" },
+      { t: "Сужающее преобразование (narrowing conversion)", d: "Преобразование к типу, который может представить не все значения исходного типа, поэтому значение может измениться (например, double -> int, long long -> int, int -> unsigned int).", s: "§ 1.2.3.5", c: "1.2. Инструкции (statements) C++" },
+      { t: "Транзакционная память (transactional memory)", d: "Механизм синхронизации, при котором группа инструкций выполняется как транзакция: либо целиком, либо никак (атомарность), причём промежуточные изменения не видны другим транзакциям (изолированность).", s: "§ 1.2.10", c: "1.2. Инструкции (statements) C++" },
+      { t: "Условный (тернарный) оператор (conditional operator)", d: "Оператор ?: с тремя операндами (условие ? выражение1 : выражение2): если условие истинно, вычисляется и возвращается выражение1, иначе — выражение2.", s: "§ 1.2.5.3", c: "1.2. Инструкции (statements) C++" },
+      { t: "Цикл do-while (do-while loop)", d: "Инструкция цикла do инструкция while (условие);, которая повторно выполняет тело, пока значение условия равно true; условие проверяется после каждой итерации.", s: "§ 1.2.6", c: "1.2. Инструкции (statements) C++" },
+      { t: "Цикл for (for loop)", d: "Инструкция цикла for (инициализация; условие; выражение-итерации) инструкция, которая выполняет инициализацию, а затем повторяет тело и выражение итерации, пока условие равно true (проверка перед каждой итерацией).", s: "§ 1.2.6", c: "1.2. Инструкции (statements) C++" },
+      { t: "Цикл for по диапазону (range-based for loop)", d: "Инструкция цикла for (объявление-элемента : диапазон), которая по очереди связывает переменную с каждым элементом диапазона — контейнера или массива — и для каждого элемента выполняет тело.", s: "§ 1.2.6", c: "1.2. Инструкции (statements) C++" },
+      { t: "Цикл while (while loop)", d: "Инструкция цикла while (условие) инструкция, которая повторно выполняет тело, пока значение условия равно true; условие проверяется перед каждой итерацией.", s: "§ 1.2.6", c: "1.2. Инструкции (statements) C++" },
+      { t: "Явное преобразование, приведение типа (explicit conversion, cast)", d: "Преобразование типа, записанное программистом с помощью оператора приведения, например static_cast<double>(sum).", s: "§ 1.2.3.5", c: "1.2. Инструкции (statements) C++" },
+
+      // Тема 1.3. Функции
+      { t: "Висячая ссылка, висячий указатель (dangling reference / pointer)", d: "Ссылка или указатель на объект, время жизни которого уже закончилось.", s: "§ 1.3.3", c: "1.3. Функции" },
+      { t: "Значение параметра по умолчанию (default argument)", d: "Выражение, указанное в объявлении функции после имени параметра и знака =; используется для инициализации параметра, если при вызове соответствующий аргумент опущен.", s: "§ 1.3.1", c: "1.3. Функции" },
+      { t: "Кадр стека (stack frame)", d: "Часть стека вызовов, выделяемая для одного вызова функции; может содержать параметры функции, её локальные переменные и адрес возврата — место в вызывающей функции, с которого продолжится выполнение.", s: "§ 1.3.4", c: "1.3. Функции" },
+      { t: "Немедленная функция (immediate function)", d: "Функция, объявленная со спецификатором consteval; каждый её вызов должен вычисляться на этапе компиляции, иначе программа не компилируется.", s: "§ 1.3.2", c: "1.3. Функции" },
+      { t: "Передача по значению (pass by value)", d: "Способ передачи, при котором параметр — отдельный объект, инициализируемый значением аргумента; изменения параметра внутри функции не влияют на аргумент.", s: "§ 1.3.3", c: "1.3. Функции" },
+      { t: "Передача по ссылке (pass by reference)", d: "Способ передачи, при котором параметр — ссылка, привязанная к аргументу; все действия с параметром выполняются над самим аргументом.", s: "§ 1.3.3", c: "1.3. Функции" },
+      { t: "Передача по указателю (pass by pointer)", d: "Разновидность передачи по значению, при которой параметру-указателю передаётся адрес объекта; функция может изменить объект через разыменование указателя.", s: "§ 1.3.3", c: "1.3. Функции" },
+      { t: "Переполнение стека (stack overflow)", d: "Аварийная ситуация, при которой очередному вызову функции не хватает места в стеке вызовов.", s: "§ 1.3.5", c: "1.3. Функции" },
+      { t: "Рекурсивная функция (recursive function)", d: "Функция, которая вызывает саму себя — непосредственно (прямая рекурсия) или через другие функции (косвенная рекурсия).", s: "§ 1.3.5", c: "1.3. Функции" },
+      { t: "Стек вызовов (call stack)", d: "Область памяти, в которой хранятся данные всех начатых и ещё не завершённых вызовов функций; данные последнего вызова находятся на вершине стека и удаляются первыми.", s: "§ 1.3.4", c: "1.3. Функции" },
+      { t: "Фактический параметр, аргумент (argument)", d: "Выражение в круглых скобках вызова функции; его значение передаётся соответствующему формальному параметру.", s: "§ 1.3.1", c: "1.3. Функции" },
+      { t: "Формальный параметр (parameter)", d: "Переменная, объявленная в списке параметров функции; получает значение при каждом вызове функции.", s: "§ 1.3.1", c: "1.3. Функции" },
+
+      // Тема 1.4. Сборка программы из одного и нескольких файлов
+      { t: "Bare-metal-программирование («на голом железе»)", d: "Разработка программ, выполняющихся на процессоре напрямую, без операционной системы: программа (прошивка) — единственный код на устройстве и сама управляет всей аппаратурой.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "[basic.start.main]", d: "Стабильная метка (stable name) раздела «Main function» стандарта C++ (глава «Start and termination»). Номера разделов меняются от редакции к редакции, а метки в квадратных скобках остаются постоянными.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "CLI (Command Line Interface)", d: "Интерфейс командной строки — способ управлять компьютером с помощью текстовых команд в приложениях Терминал (macOS/Linux) или Командная строка (Windows).", s: "§ 1.4.2", c: "1.4. Сборка программы" },
+      { t: "CRT (C RunTime — рантайм языка C)", d: "Реализация рантайма для C и C++: стартовые объектные файлы (crt1.o и др. в Linux; mainCRTStartup в MSVC) и библиотечный код, которые линкер автоматически подключает к программе. Содержит _start, готовит стек, кучу и аргументы, вызывает main и завершает процесс.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "ELF (Executable and Linkable Format)", d: "Формат исполняемых файлов, объектных файлов и разделяемых библиотек в Linux и большинстве Unix-систем. В заголовке ELF-файла записан адрес точки входа (поле e_entry), просматривается утилитой readelf -h.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "Flash-память", d: "Энергонезависимая перезаписываемая память: сохраняет содержимое при отключении питания, но медленно записывается. В микроконтроллере во flash прошивается код и константы, а изменяемые данные при старте копируются в ОЗУ (RAM) через Reset_Handler.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "GUI (Graphical User Interface)", d: "Графический интерфейс пользователя, где вместо текстовых команд управление осуществляется с помощью визуальных элементов: окон, кнопок, иконок, списков и курсора мыши.", s: "§ 1.4.1", c: "1.4. Сборка программы" },
+      { t: "IDE (Integrated Development Environment)", d: "Интегрированная среда разработки — комплекс инструментов, позволяющий написать код, скомпилировать его, провести тестирование, выполнить отладку и рефакторинг.", s: "§ 1.4.1", c: "1.4. Сборка программы" },
+      { t: "JIT-компилятор (just-in-time compiler)", d: "Транслятор, который переводит программу в машинный код по частям во время её выполнения — обычно из промежуточного представления (байт-кода).", s: "§ 1.4.5.1", c: "1.4. Сборка программы" },
+      { t: "PE (Portable Executable)", d: "Формат исполняемых файлов (.exe) и динамических библиотек (.dll) в Windows — аналог ELF. Адрес точки входа записан в поле заголовка AddressOfEntryPoint (просматривается через dumpbin /headers).", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "_start", d: "Настоящая точка входа исполняемого файла — адрес, записанный в заголовке бинарника (e_entry в ELF, AddressOfEntryPoint в PE), с которого ОС реально начинает выполнение процесса. Подключается линкером из файлов CRT.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "Ассемблер (assembler)", d: "Транслятор, который переводит программу на языке ассемблера в машинный код и записывает результат в объектный файл.", s: "§ 1.4.3.3", c: "1.4. Сборка программы" },
+      { t: "Ассемблирование", d: "Перевод текста на языке ассемблера в объектный файл: машинные инструкции целевого процессора, в которых ещё не проставлены адреса объектов из других объектных файлов и библиотек.", s: "§ 1.4.3", c: "1.4. Сборка программы" },
+      { t: "Динамическая компоновка (dynamic linking)", d: "Компоновка, при которой компоновщик записывает в исполняемый файл только сведения о нужных разделяемых библиотеках (.so, .dylib, .dll) и функциях из них; сам код библиотек подключается при запуске программы.", s: "§ 1.4.5.2", c: "1.4. Сборка программы" },
+      { t: "Драйвер компилятора (compiler driver)", d: "Программа, которую вызывает пользователь (g++, clang++, cl): сама она программу не переводит, а по очереди запускает программы, выполняющие этапы конвейера компиляции.", s: "§ 1.4.3", c: "1.4. Сборка программы" },
+      { t: "Запись о перемещении (relocation)", d: "Пометка в объектном файле: «по такому-то смещению в машинном коде должен стоять адрес такого-то символа». Ассемблер оставляет заготовку, а настоящий адрес вписывает компоновщик.", s: "§ 1.4.3.4", c: "1.4. Сборка программы" },
+      { t: "Интерпретатор (interpreter)", d: "Транслятор, который выполняет программу сам, не создавая её отдельной версии на машинном языке: при каждом запуске читает исходный текст (или промежуточное представление) и сразу выполняет действия.", s: "§ 1.4.5.1", c: "1.4. Сборка программы" },
+      { t: "Компилирование", d: "Превращение текста программы (после препроцессинга) в текст на языке ассемблера.", s: "§ 1.4.3", c: "1.4. Сборка программы" },
+      { t: "Компилятор (compiler)", d: "Программа, переводящая текст на языке программирования в эквивалентную программу на языке более низкого уровня — на языке ассемблера или в машинном коде.", s: "§ 1.4.6", c: "1.4. Сборка программы" },
+      { t: "Компоновщик (линкер, linker)", d: "Программа (ld, link.exe), которая объединяет объектные файлы и библиотеки в исполняемый файл или динамическую библиотеку: сопоставляет каждую ссылку на внешнее имя с её определением и назначает итоговые адреса.", s: "§ 1.4.3.4", c: "1.4. Сборка программы" },
+      { t: "Конвейер компиляции (compilation pipeline)", d: "Последовательность этапов сборки, в которой результат каждого этапа служит входными данными следующего.", s: "§ 1.4.3", c: "1.4. Сборка программы" },
+      { t: "Концепция единой точки входа (Single Entry Point)", d: "Архитектурный шаблон, при котором все запросы к приложению проходят через один главный файл (в веб-разработке — паттерн Front Controller).", s: "§ 1.4.5.4", c: "1.4. Сборка программы" },
+      { t: "Линковка (компоновка)", d: "Объединение объектных файлов проекта и используемых библиотек в единую целевую сущность для целевой платформы — исполняемую программу либо динамическую библиотеку.", s: "§ 1.4.3", c: "1.4. Сборка программы" },
+      { t: "Модуль (в модульном программировании)", d: "Логическая пара файлов — заголовочный файл (*.hpp) с объявлениями того, что модуль предоставляет другим, и файл реализации (*.cpp) с определениями. Это единица организации кода, а не модуль C++20.", s: "§ 1.4.7", c: "1.4. Сборка программы" },
+      { t: "Монолит", d: "Приложение, вся функциональность которого собрана в единой кодовой базе и компилируется в один исполняемый файл; подсистемы разрабатываются, собираются и развёртываются только как одно целое.", s: "§ 1.4.5.4", c: "1.4. Сборка программы" },
+      { t: "Набор инструментов (toolchain)", d: "Программы, которые выполняют этапы сборки, вместе со стандартной библиотекой и вспомогательными утилитами.", s: "§ 1.4.3", c: "1.4. Сборка программы" },
+      { t: "Обозначенное начало программы (designated start)", d: "Статус функции main по стандарту C++: точка, с которой абстрактная машина C++ начинает отсчёт наблюдаемого поведения программы (семантическое понятие уровня языка).", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "Опция (флаг) компилятора (compiler option, flag)", d: "Параметр командной строки, управляющий работой компилятора: выбором стандарта языка, уровнем предупреждений, именем выходного файла и т. д. (например, -o, -Wall, -std=c++20).", s: "§ 1.4.6.1", c: "1.4. Сборка программы" },
+      { t: "Ошибка компиляции (compile error)", d: "Нарушение правил языка, которое компилятор обнаруживает при переводе единицы трансляции: синтаксическая ошибка, необъявленное имя, несоответствие типов; объектный и исполняемый файлы не создаются.", s: "§ 1.4.4", c: "1.4. Сборка программы" },
+      { t: "Ошибка компоновки (link error)", d: "Компоновщик не может собрать исполняемый файл из объектных файлов: не найдено определение функции/переменной (неопределённая ссылка) либо одно и то же имя определено несколько раз (повторное определение).", s: "§ 1.4.4", c: "1.4. Сборка программы" },
+      { t: "Поведение, определяемое реализацией (implementation-defined behavior)", d: "Поведение, для которого стандарт C++ разрешает каждой реализации выбрать собственный вариант, но обязывает выбрать его однозначно и задокументировать. В отличие от UB, программа остаётся корректной.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "Предупреждение (warning)", d: "Сообщение компилятора о подозрительном месте в коде, которое формально не запрещено языком, но часто оказывается ошибкой (например, if (a = b)). В отличие от ошибки, не останавливает сборку.", s: "§ 1.4.4", c: "1.4. Сборка программы" },
+      { t: "Препроцессинг", d: "Обработка директив препроцессора (#include, #define и др.) до начала компиляции. Результат — расширенный текст программы, содержащий всё необходимое для создания объектного файла.", s: "§ 1.4.3", c: "1.4. Сборка программы" },
+      { t: "Препроцессор (preprocessor)", d: "Программа, которая обрабатывает исходный текст до компиляции, выполняя директивы (строки с #): подставляет файлы (#include), заменяет макросы (#define), выполняет условную компиляцию.", s: "§ 1.4.3.1", c: "1.4. Сборка программы" },
+      { t: "Раздельная компиляция (separate compilation)", d: "Сборка программы, при которой каждый исходный файл .cpp компилируется в объектный файл независимо от остальных, а затем компоновщик объединяет их в исполняемый файл.", s: "§ 1.4.9", c: "1.4. Сборка программы" },
+      { t: "Рантайм (среда времени выполнения, runtime)", d: "Вспомогательный код и данные, обслуживающие программу во время выполнения: подготовка к запуску до main, управление кучей, обработка исключений, корректное завершение.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "Сборка (build)", d: "Получение исполняемого файла (или библиотеки) из исходного текста программы одной командой в терминале или кнопкой в IDE.", s: "§ 1.4.2", c: "1.4. Сборка программы" },
+      { t: "Секция инициализированных данных (.data и .bss)", d: "Часть бинарного файла и образа памяти, где хранятся глобальные и статические переменные с явно заданными начальными значениями (.data). Парная ей секция .bss хранит переменные без начального значения и при старте заполняется нулями.", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "Синтаксическая ошибка (syntax error)", d: "Нарушение грамматики языка; обнаруживается компилятором на этапе компиляции — исполняемый файл не создаётся, пока ошибка не исправлена.", s: "§ 1.4.4", c: "1.4. Сборка программы" },
+      { t: "Спагетти-код", d: "Слабоструктурированный код с запутанными переходами управления и переплетёнными зависимостями, в котором трудно проследить логику выполнения; сложен в сопровождении и изменении.", s: "§ 1.4.5.4", c: "1.4. Сборка программы" },
+      { t: "Статическая компоновка (static linking)", d: "Компоновка, при которой компоновщик копирует в исполняемый файл код из статических библиотек (.a в Linux/macOS, .lib в Windows). Результат не зависит от наличия библиотеки при запуске, но занимает больше места.", s: "§ 1.4.5.2", c: "1.4. Сборка программы" },
+      { t: "Страж включения (include guard)", d: "Конструкция из директив условной компиляции #ifndef, #define и #endif, которая пропускает содержимое заголовочного файла при его повторном включении в ту же единицу трансляции.", s: "§ 1.4.8", c: "1.4. Сборка программы" },
+      { t: "Таблица векторов (vector table)", d: "Размещённый по фиксированному адресу памяти массив, из которого процессор аппаратно берёт начальное значение указателя стека и адреса обработчиков сброса (Reset_Handler), прерываний и сбоев на «голом железе».", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "Таблица символов (symbol table)", d: "Часть объектного файла со списком имён (символов) функций и глобальных переменных. Для определённых в файле имён указаны секция и смещение, а используемые извне помечены как неопределённые для линкера.", s: "§ 1.4.3.4", c: "1.4. Сборка программы" },
+      { t: "Текстовый редактор (text editor)", d: "Самостоятельная компьютерная программа или компонент программного комплекса, предназначенная для создания и изменения текстовых данных.", s: "§ 1.4.1", c: "1.4. Сборка программы" },
+      { t: "Транслятор (translator)", d: "Программа, которая переводит программу, написанную на одном языке программирования, в эквивалентную программу на другом языке.", s: "§ 1.4.5.1", c: "1.4. Сборка программы" },
+      { t: "Трансляция (translation)", d: "Перевод программы с одного языка программирования на другой — как правило, более низкого уровня, вплоть до машинного кода.", s: "§ 1.4.5.1", c: "1.4. Сборка программы" },
+      { t: "Фазы трансляции (phases of translation)", d: "Последовательность преобразований, через которые, по стандарту C++, исходный текст программы проходит на пути к исполняемой программе; в стандарте C++23 их девять.", s: "§ 1.4.5.2", c: "1.4. Сборка программы" },
+      { t: "Хост-окружение (hosted environment)", d: "Окружение выполнения, в котором программе доступны ОС и вся стандартная библиотека C++; только в нём стандарт требует определить main. Противоположность — автономное окружение (freestanding environment).", s: "§ 1.4.5.3", c: "1.4. Сборка программы" },
+      { t: "Язык ассемблера (assembly language)", d: "Язык программирования низкого уровня, в котором машинные инструкции процессора записываются мнемониками (mov, add, jmp), а адреса — символическими именами (метками), плюс директивы ассемблеру (.globl, .section).", s: "§ 1.4.3.3", c: "1.4. Сборка программы" },
+
+      // Тема 1.5. Модули C++20
+      { t: "Модуль C++20 (module)", d: "Именованная единица программы, объявляемая в исходном файле строкой export module имя;; модуль сам указывает, какие объявления он экспортирует (export), а другие файлы подключают его объявлением import имя;.", s: "§ 1.5.1", c: "1.5–1.6. Модули, область видимости и namespace" },
+
+      // Тема 1.6. Область видимости и пространства имён
+      { t: "using-директива (using-directive)", d: "Объявление вида using namespace имя;, которое делает доступными без квалификации сразу все имена указанного пространства имён.", s: "§ 1.6.3", c: "1.5–1.6. Модули, область видимости и namespace" },
+      { t: "using-объявление (using-declaration)", d: "Объявление вида using пространство_имён::имя;, которое вводит в область видимости одно имя из пространства имён. Далее это имя можно использовать без квалификации.", s: "§ 1.6.3", c: "1.5–1.6. Модули, область видимости и namespace" },
+      { t: "Квалифицированное (полное) имя (qualified name)", d: "Имя, перед которым через :: указано, где его искать: пространство имён (std::cout, geometry::area), класс или перечисление (Color::Red).", s: "§ 1.6.2", c: "1.5–1.6. Модули, область видимости и namespace" },
+      { t: "Область видимости (scope)", d: "Часть текста программы, в пределах которой имя (идентификатор) можно использовать для обращения к обозначенной им сущности — переменной, функции, типу.", s: "§ 1.6.1", c: "1.5–1.6. Модули, область видимости и namespace" },
+      { t: "Пространство имён (namespace)", d: "Декларативная область, которая объединяет объявления под общим именем и отделяет их имена от одноимённых имён в других частях программы и в библиотеках.", s: "§ 1.6.2", c: "1.5–1.6. Модули, область видимости и namespace" },
+
+      // Тема 2.1. Системы счисления и представление чисел
+      { t: "Бит (bit, binary digit)", d: "Один двоичный разряд, принимающий значение 0 или 1; минимальная единица информации. Восемь битов образуют байт — минимальную адресуемую единицу памяти.", s: "§ 2.1.1.2", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Восьмеричная система счисления (octal)", d: "Позиционная система счисления с основанием 8 и алфавитом из цифр 0–7; одна восьмеричная цифра соответствует трём двоичным разрядам — триаде.", s: "§ 2.1.1.2", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Двоичная система счисления (binary)", d: "Позиционная система счисления с основанием 2 и алфавитом из двух цифр — 0 и 1; система представления всех данных в памяти компьютера.", s: "§ 2.1.1.2", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Дополнительный код (two's complement)", d: "Представление знаковых целых, при котором отрицательное число -x в сетке из N битов кодируется как 2^N - x (инвертировать все биты x и прибавить 1). Ноль представлен единственным образом, используется во всех современных процессорах.", s: "§ 2.1.2.1", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Мантисса (significand, mantissa)", d: "Значащие цифры числа в представлении с плавающей точкой; количество разрядов мантиссы определяет точность представления.", s: "§ 2.1.2.2", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Непозиционная система счисления (non-positional numeral system)", d: "Система счисления, в которой значение цифры не зависит от её позиции в записи числа.", s: "§ 2.1.1.1", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Обратный код (ones' complement)", d: "Представление знаковых целых, при котором отрицательное число получается из положительного инверсией всех битов. Сохраняет проблему двух представлений нуля: 0000 0000 и 1111 1111.", s: "§ 2.1.2.1", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Основание системы счисления (radix, base)", d: "Количество различных цифр, используемых в позиционной системе счисления; основание q задаёт алфавит цифр от 0 до q - 1, а вес каждого разряда равен степени числа q.", s: "§ 2.1.1.1", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Позиционная система счисления (positional numeral system)", d: "Система счисления, в которой значение цифры определяется её позицией — разрядом: одна и та же цифра в разных разрядах означает разные величины.", s: "§ 2.1.1.1", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Порядок (exponent)", d: "Показатель степени основания в представлении с плавающей точкой; определяет положение двоичной точки и тем самым масштаб числа. Количество разрядов порядка определяет диапазон представимых значений.", s: "§ 2.1.2.2", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Представление с плавающей точкой (floating-point representation)", d: "Способ хранения вещественных чисел в виде ±m · 2^p, где m — мантисса, p — порядок; положение двоичной точки задаётся порядком, позволяя экономно хранить и очень большие, и очень маленькие величины.", s: "§ 2.1.2.2", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Прямой код (sign-and-magnitude)", d: "Представление знаковых целых, при котором старший бит хранит знак, а остальные биты — модуль числа. Неудобен для машины: два нуля (+0 и -0) и сложная логика сложения разных знаков.", s: "§ 2.1.2.1", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Система счисления (numeral system)", d: "Способ записи чисел с помощью конечного набора знаков — цифр — и правил образования записи числа из этих знаков.", s: "§ 2.1.1.1", c: "2.1. Системы счисления и представление чисел" },
+      { t: "Шестнадцатеричная система счисления (hexadecimal)", d: "Позиционная система счисления с основанием 16; цифры 10–15 обозначаются латинскими буквами A–F; одна шестнадцатеричная цифра соответствует четырём двоичным разрядам — тетраде.", s: "§ 2.1.1.2", c: "2.1. Системы счисления и представление чисел" },
+
+      // Тема 2.2. Алгоритмы
+      { t: "O-нотация (Big O)", d: "Способ записи асимптотического роста времени выполнения алгоритма сверху при увеличении размера входных данных (без учёта констант). f(n) = O(g(n)) означает: существуют C > 0 и n0 такие, что для всех n > n0 выполняется |f(n)| <= C·|g(n)|.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Алгоритм (algorithm)", d: "Единый метод решения определённого класса однотипных задач, обладающий свойствами определённости, понятности, результативности, дискретности и массовости, оперирующий конструктивными объектами.", s: "§ 2.2.1", c: "2.2. Алгоритмы" },
+      { t: "Блок-схема (flowchart)", d: "Графическое представление алгоритма стандартными геометрическими фигурами, соединёнными стрелками, которые показывают порядок выполнения шагов.", s: "§ 2.2.2", c: "2.2. Алгоритмы" },
+      { t: "Время выполнения (временная сложность, time complexity)", d: "Количество элементарных операций T(n), которое выполняет алгоритм, как функция размера входных данных n; для сравнения алгоритмов используется асимптотическая оценка — O-нотация.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Вычислимая функция (computable function)", d: "Математическая функция, значение которой может быть получено посредством эффективной процедуры — алгоритма; в современной логике моделируются как частично рекурсивные функции.", s: "§ 2.2.1", c: "2.2. Алгоритмы" },
+      { t: "Ёмкостная сложность (пространственная сложность, space complexity)", d: "Объём дополнительной памяти S(n), который требуется алгоритму, как функция размера входных данных n. Память, занятая самими входными данными, обычно не учитывается.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Запись на языке программирования (source code implementation)", d: "Точная, исполняемая форма алгоритма — единственная из пяти форм записи, которую можно скомпилировать и запустить, а не только прочитать.", s: "§ 2.2.2", c: "2.2. Алгоритмы" },
+      { t: "Линейный алгоритм (straight-line algorithm)", d: "Список действий, выполняемых последовательно, друг за другом, без ветвлений и повторений.", s: "§ 2.2.3", c: "2.2. Алгоритмы" },
+      { t: "Математическая запись алгоритма (mathematical notation)", d: "Запись алгоритма средствами математической нотации — формулами, отношениями, кусочными определениями функций.", s: "§ 2.2.2", c: "2.2. Алгоритмы" },
+      { t: "Машина Тьюринга (Turing machine)", d: "Абстрактная вычислительная модель (1936 г.): неограниченная в обе стороны лента, разделённая на ячейки, и управляющее устройство с конечным множеством состояний, способное читать, писать и сдвигаться по ленте.", s: "§ 2.2.1", c: "2.2. Алгоритмы" },
+      { t: "Неполное ветвление (one-branch selection)", d: "Разветвление, у которого определён только один путь выполнения — при истинном значении условия; при ложном управление сразу передаётся дальше (в C++ — if без else).", s: "§ 2.2.3", c: "2.2. Алгоритмы" },
+      { t: "Нормальный алгоритм Маркова (НАМ, Markov algorithm)", d: "Строгая математическая форма записи алгоритмов обработки символьных строк: набор правил переработки слов в некотором алфавите.", s: "§ 2.2.1", c: "2.2. Алгоритмы" },
+      { t: "Ω-нотация (Big Omega)", d: "Асимптотическая оценка снизу: запись f(n) = Ω(g(n)) означает, что существуют константа C > 0 и номер n0 такие, что для любого n > n0 выполняется |f(n)| >= C·|g(n)|.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Θ-нотация (Big Theta)", d: "Точная оценка порядка роста: запись f(n) = Θ(g(n)) означает, что существуют константы C1 > 0, C2 > 0 и номер n0 такие, что для любого n > n0 выполняется C1·|g(n)| <= |f(n)| <= C2·|g(n)|.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Полное ветвление", d: "Разветвление, у которого определены оба пути выполнения — и при истинном, и при ложном значении условия (в C++ — if с обязательным else).", s: "§ 2.2.3", c: "2.2. Алгоритмы" },
+      { t: "Правильный алгоритм (correct algorithm)", d: "Алгоритм, который на любом допустимом для данной задачи входе завершает работу и выдаёт результат, удовлетворяющий требованиям задачи (говорят, что алгоритм решает задачу).", s: "§ 2.2.1", c: "2.2. Алгоритмы" },
+      { t: "Простота алгоритма (simplicity)", d: "Отсутствие избыточных усложнений в логике: чем меньше в алгоритме особых случаев и исключений из общего правила, тем проще его понять, реализовать и сопровождать.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Псевдокод (pseudocode)", d: "Описание алгоритма на упрощённом языке, близком по структуре к языкам программирования (ключевые слова «если», «иначе», «пока», отступы), но без строгого синтаксиса конкретного языка.", s: "§ 2.2.2", c: "2.2. Алгоритмы" },
+      { t: "Разветвляющийся алгоритм (branching algorithm)", d: "Алгоритм, содержащий хотя бы одну проверку условия, в результате которой выполнение переходит по одному из нескольких возможных путей.", s: "§ 2.2.3", c: "2.2. Алгоритмы" },
+      { t: "Скорость сходимости (rate of convergence)", d: "Для итерационных алгоритмов — то, насколько быстро последовательность промежуточных состояний приближается к результату: чем быстрее сходимость, тем меньше шагов требуется.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Словесное описание алгоритма (verbal description)", d: "Запись алгоритма обычным естественным языком, шаг за шагом, без какой-либо формальной нотации.", s: "§ 2.2.2", c: "2.2. Алгоритмы" },
+      { t: "Удобочитаемость (readability)", d: "Насколько легко разобраться в записи алгоритма или его коде постороннему человеку; зависит от выбора имён, структуры записи, комментариев и стиля оформления — не от самой логики алгоритма.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Удобство обращения к алгоритму (ease of use)", d: "Насколько просто и естественно алгоритм включается в использование: понятный набор входных и выходных данных, минимальное число параметров, отсутствие скрытых предусловий.", s: "§ 2.2.4", c: "2.2. Алгоритмы" },
+      { t: "Цикл с параметром (счётчиком, counting loop)", d: "Цикл, число повторений которого заранее известно и управляется переменной-счётчиком, изменяющейся на каждой итерации.", s: "§ 2.2.3", c: "2.2. Алгоритмы" },
+      { t: "Цикл с постусловием (post-test loop)", d: "Цикл, в котором условие проверяется после выполнения тела; тело гарантированно выполняется хотя бы один раз, даже если условие сразу ложно.", s: "§ 2.2.3", c: "2.2. Алгоритмы" },
+      { t: "Цикл с предусловием (pre-test loop)", d: "Цикл, в котором условие продолжения проверяется перед каждым выполнением тела; если условие изначально ложно, тело не выполнится ни разу.", s: "§ 2.2.3", c: "2.2. Алгоритмы" },
+      { t: "Циклический алгоритм (iterative algorithm)", d: "Алгоритм, предусматривающий многократное повторение одной и той же последовательности действий, пока выполняется (или не выполняется) заданное условие.", s: "§ 2.2.3", c: "2.2. Алгоритмы" },
+
+      // Тема 2.3. Разработка и отладка программ
+      { t: "AC (Accepted, «зачтено»)", d: "Вердикт проверяющей системы: программа скомпилировалась, уложилась в ограничения по времени и памяти и выдала верный ответ на всех тестах данной задачи.", s: "§ 2.3.2.5", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "WA (Wrong Answer, «неверный ответ»)", d: "Вердикт проверяющей системы: программа выдала неверный результат хотя бы на одном тесте.", s: "§ 2.3.2.5", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Бэклог (backlog)", d: "Упорядоченный список задач, которые предстоит выполнить. Наверху стоят самые важные задачи.", s: "§ 2.3.1.3", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Високосная секунда (leap second)", d: "Секунда, добавляемая в шкалу UTC или изымаемая из неё для удержания расхождения с астрономическим временем в пределах 0,9 с. Положительная даёт минуту из 61 с (23:59:60), отрицательная — из 59 с.", s: "§ 2.3.2.2", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Восходящее проектирование (bottom-up design)", d: "Метод построения алгоритма, при котором сначала пишутся и проверяются простые «кирпичики» — отдельные функции для элементарных подзадач, а решение всей задачи собирается из готовых частей.", s: "§ 2.3.1.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Декомпозиция (decomposition)", d: "Процесс разделения задачи и её решения на ряд подзадач, коллекций объектов и принципов взаимоотношений между этими объектами.", s: "§ 2.3.1.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Декомпозиция данных (data decomposition)", d: "Разбиение задачи на модули по сущностям данных, с которыми она работает, а не по действиям над ними: модуль строится вокруг конкретных данных, собирая внутри операции над ними.", s: "§ 2.3.1.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Декомпозиция, основанная на объектах (object-based decomposition)", d: "Разбиение задачи на модули-объекты, каждый из которых объединяет данные и операции над ними в одну неразделимую единицу (инкапсуляция); решение получается взаимодействием объектов.", s: "§ 2.3.1.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Доска Kanban (Kanban board)", d: "Таблица, столбцы которой соответствуют состояниям задачи, а карточки — самим задачам. Перемещение карточки между столбцами показывает ход работы.", s: "§ 2.3.1.3", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Задача (task, issue)", d: "Небольшая единица работы с понятным результатом, которую можно закончить за короткое время.", s: "§ 2.3.1.3", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Итерация (iteration)", d: "Короткий отрезок работы в разработке, который заканчивается работающей версией программы.", s: "§ 2.3.1.3", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Логическая ошибка (logic error)", d: "Ошибка в алгоритме: программа компилируется и работает без сбоев, но выдаёт неверный результат — делает не то, что требовалось по задаче.", s: "§ 2.3.2.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Математическая модель модуля НОД", d: "НОД(a, b) = НОД(|a|, |b|). Если a = 0 и b = 0, НОД не определён (ошибка вызывающего кода, сигнализируется исключением). Если одно из чисел равно 0, то НОД(a, 0) = |a|.", s: "§ 2.3.1.2", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Неопределённое поведение (undefined behavior, UB)", d: "Поведение программы, для которого стандарт C++ не накладывает вообще никаких ограничений: программа может аварийно завершиться, вывести «мусор» или отработать «как ожидалось».", s: "§ 2.3.2.4", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Непройденный путь выполнения (unexercised execution path)", d: "Ветка кода, которая написана и скомпилирована, но за всё время эксплуатации программы ни разу не получала управления.", s: "§ 2.3.2.2", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Нисходящее проектирование (пошаговая детализация, top-down design)", d: "Метод декомпозиции, при котором разработчик начинает с наиболее абстрактного описания системы, а затем последовательными шагами детализирует и разбивает подсистемы до простых реализуемых элементов (понижение уровня абстракции).", s: "§ 2.3.1.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Отладка (debugging)", d: "Процесс поиска и устранения ошибок в уже написанной программе путём наблюдения за её выполнением в памяти в конкретный момент работы.", s: "§ 2.3.2.3", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Отладчик (debugger)", d: "Инструмент среды разработки, который запускает программу под своим управлением: приостанавливает выполнение в заданных местах, позволяет смотреть значения переменных, стек вызовов и менять состояние на лету.", s: "§ 2.3.2.3", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Ошибка взаимодействия", d: "Ошибка на стыке программы и её окружения: несоответствие аппаратному интерфейсу, интерфейсу прикладного программирования (API) или протоколу обмена.", s: "§ 2.3.2.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Ошибка времени выполнения (runtime error)", d: "Ошибка, возникающая в уже скомпилированной и запущенной программе: при определённых данных или условиях выполнение становится невозможным, и программа завершается аварийно.", s: "§ 2.3.2.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Ошибка компиляции (compilation error)", d: "Любая ошибка, из-за которой компилятор не может перевести исходный текст в объектный код: синтаксические ошибки, семантические ошибки типов, необъявленные имена и др.", s: "§ 2.3.2.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Ошибка ресурса (resource error)", d: "Ошибка неправильного обращения с ресурсами программы — памятью и диапазонами значений: переполнение буфера или стека, чтение неинициализированной переменной, нарушение прав доступа к памяти, выход за диапазон типа.", s: "§ 2.3.2.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Принцип структурности (structured programming)", d: "Принцип построения алгоритма, согласно которому любой алгоритм можно записать, используя только три базовые конструкции — следование, ветвление и цикл, — без оператора безусловного перехода (goto).", s: "§ 2.3.1.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Проверяющая система (online judge)", d: "Автоматическая система, которая компилирует присланное решение и прогоняет его на наборе заранее заготовленных тестов, выдавая по каждому вердикт.", s: "§ 2.3.2.5", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Семантическая ошибка (semantic error)", d: "Нарушение правил смысла языка: конструкция записана синтаксически верно, но требует недопустимого действия — например, операции, не определённой для данных типов.", s: "§ 2.3.2.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Слежение за переменными (watching variables, watch window)", d: "Способ увидеть текущие значения переменных, доступных в приостановленной точке программы, и наблюдать, как они меняются от шага к шагу выполнения.", s: "§ 2.3.2.3", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Точка останова (breakpoint)", d: "Отметка на конкретной строке кода, при достижении которой отладчик приостанавливает выполнение программы, оставляя её «замороженной» в этом состоянии.", s: "§ 2.3.2.3", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Тривиальная декомпозиция (trivial decomposition)", d: "Разбиение задачи по шаблонной схеме «прочитать данные -> обработать -> вывести результат» без учёта реальной логической структуры конкретной задачи.", s: "§ 2.3.1.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Функциональная декомпозиция (functional decomposition)", d: "Разбиение задачи на модули по выполняемым действиям: каждый модуль — отдельная операция с чётким входом и результатом (группировка вокруг глаголов «что делает»).", s: "§ 2.3.1.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+
+      // Тема 2.4. Современное положение языка С++
+      { t: "Классический С++ (legacy C++)", d: "Собирательное название первых редакций стандарта C++98 и C++03; противопоставляется современному C++ (C++11 и далее).", s: "§ 2.4.1.2", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Мультипарадигмальный язык программирования (multi-paradigm language)", d: "Язык программирования, поддерживающий несколько парадигм программирования и позволяющий сочетать их в одной программе.", s: "§ 2.4.2.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Парадигма программирования (programming paradigm)", d: "Совокупность принципов, методов и понятий, определяющих способ конструирования программ.", s: "§ 2.4.2.1", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Современный С++", d: "Собирательное название версий языка начиная с C++11 (C++11/14/17/20/23), в которых стиль программирования принципиально отличается от «классического» C++98/03.", s: "§ 2.4.1.2", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+      { t: "Стандарт С++", d: "Международный стандарт ISO/IEC 14882, точно и исчерпывающе определяющий синтаксис и семантику языка C++ и его стандартной библиотеки.", s: "§ 2.4.1.2", c: "2.3–2.4. Разработка, отладка и стандарты C++" },
+
+      // Тема 3.1. Ввод-вывод
+      { t: "Буфер потока (stream buffer)", d: "Область памяти, в которой символы накапливаются перед передачей устройству. Запись одной порции дешевле, чем множество обращений к устройству по одному символу.", s: "§ 3.1.1", c: "3.1. Ввод-вывод" },
+      { t: "Кодировка символов (character encoding)", d: "Правило, по которому каждому символу текста сопоставляется последовательность байтов (например, ASCII, UTF-8, Windows-1251).", s: "§ 3.1.5", c: "3.1. Ввод-вывод" },
+      { t: "Кодовая страница (code page)", d: "Принятое в Windows название кодировки, обозначаемое номером: 866 — кодировка консоли русской Windows (DOS), 1251 — кодировка графических программ русской Windows, 65001 — UTF-8.", s: "§ 3.1.5", c: "3.1. Ввод-вывод" },
+      { t: "Манипулятор потока (stream manipulator)", d: "Объект или функция, которые передают в поток оператором << или >>, чтобы изменить его настройки либо выполнить действие с потоком.", s: "§ 3.1.3", c: "3.1. Ввод-вывод" },
+      { t: "Оператор вставки (insertion operator)", d: "Оператор <<, применённый к потоку: преобразует значение в символы и записывает их в поток вывода.", s: "§ 3.1.1", c: "3.1. Ввод-вывод" },
+      { t: "Оператор извлечения (extraction operator)", d: "Оператор >>, применённый к потоку: читает символы из потока ввода, преобразует их в значение типа переменной и записывает результат в переменную.", s: "§ 3.1.1", c: "3.1. Ввод-вывод" },
+      { t: "Поток (stream)", d: "Абстракция последовательности символов, которая передаётся между программой и внешним устройством: консолью, файлом, строкой в памяти.", s: "§ 3.1.1", c: "3.1. Ввод-вывод" },
+      { t: "Состояние потока (stream state)", d: "Набор флагов успешности операций: eofbit — достигнут конец ввода, failbit — операция чтения не удалась, badbit — серьёзная ошибка потока.", s: "§ 3.1.2", c: "3.1. Ввод-вывод" },
+
+      // Тема 3.2. Введение в STL и алгоритмы сортировки
+      { t: "STL (Standard Template Library)", d: "Стандартная библиотека шаблонов — часть стандартной библиотеки C++, состоящая из контейнеров, итераторов и алгоритмов, написанных как шаблоны.", s: "§ 3.2.1", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Вектор (std::vector)", d: "Последовательный контейнер, элементы которого хранятся в памяти подряд, как у массива, а число элементов может меняться во время работы программы.", s: "§ 3.2.2.1", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Внутренняя сортировка (internal sorting)", d: "Сортировка, при которой все элементы помещаются в оперативной памяти и доступны в любой момент (противоположность — внешняя сортировка данных в файлах).", s: "§ 3.2.10.1", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Длинная арифметика (arbitrary-precision / bignum arithmetic)", d: "Представление чисел и выполнение операций над ними, при которых количество цифр числа не ограничено размером машинного слова (хранится как массив разрядов по основанию 2^32 или 2^64).", s: "§ 3.2.5", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Ёмкость вектора (capacity)", d: "Число элементов, под которое вектор уже выделил память; всегда не меньше размера size(). Узнаётся функцией-членом capacity().", s: "§ 3.2.2.1", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Инвалидация итератора (iterator invalidation)", d: "Потеря итератором (а также указателем или ссылкой на элемент) силы после изменения контейнера: обращение через него, сравнение и сдвиг приводят к неопределённому поведению (UB).", s: "§ 3.2.4", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Итератор (iterator)", d: "Объект, который указывает на элемент контейнера и умеет переходить к следующему элементу; обобщает указатель на элемент массива: *it даёт элемент, ++it переходит к следующему.", s: "§ 3.2.4", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Константный итератор (const_iterator)", d: "Итератор, через который элемент контейнера можно только прочитать (*it даёт ссылку на константу, присваивание *it = ... не компилируется); сам итератор при этом можно сдвигать.", s: "§ 3.2.4", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Контейнер (container)", d: "Объект, который хранит набор других объектов (элементов) одного типа, сам выделяет и освобождает память под них и даёт доступ к элементам.", s: "§ 3.2.1", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Кортеж (std::tuple)", d: "Шаблон из заголовка <tuple>, который хранит фиксированное число значений, возможно разных типов; к элементу обращаются по номеру std::get<i>(t), начиная с нуля.", s: "§ 3.2.6.1", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Обратный итератор (reverse_iterator)", d: "Итератор, который обходит контейнер от последнего элемента к первому: ++it переходит к предыдущему элементу контейнера, --it — к следующему.", s: "§ 3.2.4", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Пара (std::pair)", d: "Шаблон структуры из заголовка <utility>, которая хранит два значения, возможно разных типов, в полях first и second.", s: "§ 3.2.6.1", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Сортировка (sorting)", d: "Перестановка элементов последовательности так, чтобы они шли в заданном порядке — например, по неубыванию (каждый следующий элемент не меньше предыдущего).", s: "§ 3.2.10.1", c: "3.2. STL и алгоритмы сортировки" },
+      { t: "Устойчивая сортировка (stable sorting)", d: "Сортировка, которая сохраняет взаимный порядок элементов с равными ключами: если до сортировки запись A стояла раньше равной ей по ключу записи B, то и после сортировки A стоит раньше B.", s: "§ 3.2.10.1", c: "3.2. STL и алгоритмы сортировки" },
+
+      // Тема 3.3. Ссылки, указатели и динамическая память
+      { t: "Выражение delete (delete-expression)", d: "Выражение delete ptr, которое уничтожает объект, созданный new, и освобождает занятую им память; ptr должен содержать адрес от new или nullptr.", s: "§ 3.3.6.2", c: "3.3. Ссылки, указатели и динамическая память" },
+      { t: "Выражение new (new-expression)", d: "Выражение new T или new T(инициализатор), которое выделяет динамическую память под объект типа T, создаёт в ней объект и возвращает указатель T* на него.", s: "§ 3.3.6.2", c: "3.3. Ссылки, указатели и динамическая память" },
+      { t: "Динамическая память (dynamic memory)", d: "Память, которую программа запрашивает и освобождает явно во время выполнения; время жизни объекта в ней не связано с блоком кода, а длится от создания выражением new до уничтожения выражением delete.", s: "§ 3.3.6.1", c: "3.3. Ссылки, указатели и динамическая память" },
+      { t: "Динамический массив (dynamic array)", d: "Массив, созданный выражением new T[n] в динамической памяти; количество элементов n может быть вычислено во время работы программы. Уничтожается выражением delete[] ptr.", s: "§ 3.3.6.3", c: "3.3. Ссылки, указатели и динамическая память" },
+      { t: "Указатель на функцию (function pointer)", d: "Указатель, который хранит адрес функции; через него функцию можно вызвать.", s: "§ 3.3.5.1", c: "3.3. Ссылки, указатели и динамическая память" },
+      { t: "Функция обратного вызова (callback function)", d: "Функция, которая передаётся в качестве аргумента другой функции и вызывается внутри неё.", s: "§ 3.3.5.3", c: "3.3. Ссылки, указатели и динамическая память" },
+
+      // Тема 3.4. Перегрузка и шаблоны функций
+      { t: "decltype", d: "Спецификатор типа (с C++11), обозначающий тип выражения, указанного в скобках: запись decltype(выражение) компилятор заменяет настоящим типом этого выражения, а само выражение не вычисляет.", s: "§ 3.4.2.8", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "decltype(auto)", d: "Спецификатор типа (с C++14), выводящий тип строго по правилам decltype: в отличие от auto, он сохраняет верхнеуровневый const и ссылочность исходного выражения.", s: "§ 3.4.2.8", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "requires-выражение (requires expression)", d: "Выражение вида requires (параметры) { требования }, которое истинно, если все перечисленные требования к типам и выражениям выполнимы; сами выражения при этом не вычисляются.", s: "§ 3.4.3.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "requires-условие (requires clause)", d: "Часть объявления шаблона вида requires ограничение, которая задаёт ограничение для его параметров.", s: "§ 3.4.3.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Аргумент шаблона (template argument)", d: "Тип, значение или шаблон, подставляемый в параметр шаблона.", s: "§ 3.4.2.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Вариативная функция (variadic function)", d: "Функция с переменным числом аргументов, последний параметр которой — многоточие ...; при вызове ей можно передать после обязательных аргументов произвольное число дополнительных.", s: "§ 3.4.1.4", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Вывод аргументов шаблона (template argument deduction)", d: "Определение компилятором аргументов шаблона по типам фактических аргументов вызова функции, когда аргументы шаблона не указаны явно.", s: "§ 3.4.2.3", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Вывод возвращаемого типа (return type deduction)", d: "Запись auto на месте возвращаемого типа функции (с C++14), при которой компилятор выводит этот тип из выражения в инструкции return.", s: "§ 3.4.2.9", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Зависимое имя (dependent name)", d: "Имя внутри шаблона, смысл которого зависит от параметра шаблона.", s: "§ 3.4.2.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Концепт (concept)", d: "Именованное ограничение — шаблон, объявленный ключевым словом concept; запись Концепт<T> — константное выражение типа bool, истинное, если тип T удовлетворяет требованиям концепта.", s: "§ 3.4.3.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Многоточие (эллипсис, ellipsis)", d: "Лексема ... из трёх точек подряд; в конце списка параметров функции обозначает, что при вызове можно передать дополнительные аргументы.", s: "§ 3.4.1.4", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Обобщённое программирование (generic programming)", d: "Парадигма программирования, заключающаяся в таком описании данных и алгоритмов, которое можно применять к различным типам данных, не меняя само это описание.", s: "§ 3.4.2.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Ограничение (constraint)", d: "Логическое условие на параметры шаблона, которое компилятор проверяет при подстановке аргументов шаблона; если условие не выполнено, шаблон исключается из кандидатов при разрешении перегрузки.", s: "§ 3.4.3.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Пакет параметров (parameter pack)", d: "Параметр шаблона или функции, принимающий ноль или более аргументов.", s: "§ 3.4.2.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Параметр шаблона (template parameter)", d: "Имя в списке параметров шаблона, вместо которого при использовании шаблона подставляется аргумент шаблона.", s: "§ 3.4.2.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Параметр шаблона, не являющийся типом (non-type template parameter)", d: "Параметр шаблона, который заменяется не типом данных, а конкретным значением — константой времени компиляции.", s: "§ 3.4.2.5", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Перегрузка функций (function overloading)", d: "Использование нескольких функций с одним и тем же именем, но с различными типами параметров и/или различным количеством параметров.", s: "§ 3.4.1.1", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Перегрузка шаблонов функций (function template overloading)", d: "Объявление в одной области видимости нескольких шаблонов функций с одним именем и разными сигнатурами либо шаблона и обычной функции с одним именем.", s: "§ 3.4.2.6", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Разрешение перегрузки (overload resolution)", d: "Процесс, в котором компилятор определяет, какую именно функцию требуется вызвать, по типу фактических параметров.", s: "§ 3.4.1.1", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Спецификатор typedef", d: "Спецификатор объявления, унаследованный из языка C: имя, объявленное с typedef, обозначает не переменную, а псевдоним типа.", s: "§ 3.4.2.10", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Шаблон функции (function template)", d: "Обобщённое описание функции, в котором типы данных, которыми оперирует функция, являются параметрами; шаблон функции определяет семейство функций.", s: "§ 3.4.2.1", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Экземпляр шаблона функции, специализация шаблона функции (function template specialization)", d: "Конкретная функция, которую компилятор порождает из шаблона функции, подставив в него аргументы шаблона.", s: "§ 3.4.2.2", c: "3.4. Перегрузка и шаблоны функций" },
+      { t: "Явная специализация шаблона функции (explicit specialization)", d: "Отдельное определение шаблона функции для конкретных аргументов шаблона; объявляется с префиксом template<> и задаёт для этих аргументов особое поведение вместо общего.", s: "§ 3.4.2.4", c: "3.4. Перегрузка и шаблоны функций" }
+    ];
+
+    // Assign stable IDs
+    const ALL_TERMS = RAW_TERMS.map((item, idx) => ({ ...item, id: idx }));
+
+    // State
+    let filteredDeck = [...ALL_TERMS];
+    let currentIndex = 0;
+    let isFlipped = false;
+    let reverseMode = false; // false = Term on front, true = Definition on front
+    let currentMode = 'cards'; // 'cards' | 'quiz' | 'list'
+    let progress = {}; // { [id]: 'known' | 'hard' }
+    let quizCorrect = 0;
+    let quizTotal = 0;
+
+    // Load saved progress from localStorage
+    function loadProgress() {
+      try {
+        const saved = localStorage.getItem('cpp_glossary_kr1_progress');
+        if (saved) progress = JSON.parse(saved);
+      } catch (e) {
+        progress = {};
+      }
+    }
+
+    function saveProgress() {
+      try {
+        localStorage.setItem('cpp_glossary_kr1_progress', JSON.stringify(progress));
+      } catch (e) {}
+      updateStatsUI();
+    }
+
+    function initTopics() {
+      const select = document.getElementById('topic-select');
+      const topics = [...new Set(ALL_TERMS.map(item => item.c))];
+      topics.forEach(topic => {
+        const count = ALL_TERMS.filter(t => t.c === topic).length;
+        const opt = document.createElement('option');
+        opt.value = topic;
+        opt.textContent = `${topic} (${count})`;
+        select.appendChild(opt);
+      });
+      document.getElementById('total-terms-badge').textContent = ALL_TERMS.length;
+    }
+
+    function applyFilters() {
+      const topic = document.getElementById('topic-select').value;
+      const status = document.getElementById('status-select').value;
+      const query = document.getElementById('search-input').value.trim().toLowerCase();
+
+      document.getElementById('clear-search-btn').classList.toggle('hidden', !query);
+
+      filteredDeck = ALL_TERMS.filter(item => {
+        if (topic !== 'all' && item.c !== topic) return false;
+        const st = progress[item.id];
+        if (status === 'known' && st !== 'known') return false;
+        if (status === 'hard' && st !== 'hard') return false;
+        if (status === 'unlearned' && st === 'known') return false;
+        if (query) {
+          const matchTerm = item.t.toLowerCase().includes(query);
+          const matchDef = item.d.toLowerCase().includes(query);
+          if (!matchTerm && !matchDef) return false;
+        }
+        return true;
+      });
+
+      currentIndex = 0;
+      isFlipped = false;
+      updateFlipUI();
+      renderCurrentView();
+      updateStatsUI();
+    }
+
+    function clearSearch() {
+      document.getElementById('search-input').value = '';
+      applyFilters();
+    }
+
+    function resetFilters() {
+      document.getElementById('topic-select').value = 'all';
+      document.getElementById('status-select').value = 'all';
+      document.getElementById('search-input').value = '';
+      applyFilters();
+    }
+
+    function updateStatsUI() {
+      const total = ALL_TERMS.length;
+      const knownCount = Object.values(progress).filter(v => v === 'known').length;
+      const hardCount = Object.values(progress).filter(v => v === 'hard').length;
+
+      document.getElementById('filtered-count').textContent = filteredDeck.length;
+      document.getElementById('known-count').textContent = knownCount;
+      document.getElementById('hard-count').textContent = hardCount;
+
+      document.getElementById('progress-known-bar').style.width = `${(knownCount / total) * 100}%`;
+      document.getElementById('progress-hard-bar').style.width = `${(hardCount / total) * 100}%`;
+    }
+
+    function renderCurrentView() {
+      if (currentMode === 'cards') renderCard();
+      else if (currentMode === 'quiz') generateQuizQuestion();
+      else if (currentMode === 'list') renderList();
+    }
+
+    function renderCard() {
+      const emptyEl = document.getElementById('empty-state');
+      const cardContainer = document.getElementById('card-container');
+
+      if (filteredDeck.length === 0) {
+        emptyEl.classList.remove('hidden');
+        cardContainer.classList.add('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      cardContainer.classList.remove('hidden');
+
+      const item = filteredDeck[currentIndex];
+      document.getElementById('card-topic-badge').textContent = item.c;
+      document.getElementById('card-index-text').textContent = `${currentIndex + 1} / ${filteredDeck.length}`;
+      document.getElementById('front-section').textContent = item.s;
+      document.getElementById('back-section').textContent = item.s;
+
+      const statusBadge = document.getElementById('card-status-badge');
+      const st = progress[item.id];
+      if (st === 'known') {
+        statusBadge.textContent = '✓ Выучено';
+        statusBadge.className = 'text-xs px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+      } else if (st === 'hard') {
+        statusBadge.textContent = '↻ Повторить';
+        statusBadge.className = 'text-xs px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      } else {
+        statusBadge.className = 'hidden';
+      }
+
+      if (!reverseMode) {
+        document.getElementById('front-label').textContent = 'Термин';
+        document.getElementById('card-front-text').textContent = item.t;
+        document.getElementById('card-front-text').className = 'text-2xl sm:text-3xl font-bold text-white leading-snug break-words';
+        document.getElementById('back-term-reminder').textContent = item.t;
+        document.getElementById('card-back-text').textContent = item.d;
+      } else {
+        document.getElementById('front-label').textContent = 'Определение (угадайте термин)';
+        document.getElementById('card-front-text').textContent = item.d;
+        document.getElementById('card-front-text').className = 'text-base sm:text-xl font-medium text-slate-100 leading-relaxed';
+        document.getElementById('back-term-reminder').textContent = 'Ответ:';
+        document.getElementById('card-back-text').textContent = item.t;
+      }
+    }
+
+    function flipCard() {
+      isFlipped = !isFlipped;
+      updateFlipUI();
+    }
+
+    function updateFlipUI() {
+      const inner = document.getElementById('flashcard-inner');
+      if (isFlipped) inner.classList.add('rotate-y-180');
+      else inner.classList.remove('rotate-y-180');
+    }
+
+    function nextCard() {
+      if (filteredDeck.length === 0) return;
+      isFlipped = false;
+      updateFlipUI();
+      setTimeout(() => {
+        currentIndex = (currentIndex + 1) % filteredDeck.length;
+        renderCard();
+      }, 120);
+    }
+
+    function prevCard() {
+      if (filteredDeck.length === 0) return;
+      isFlipped = false;
+      updateFlipUI();
+      setTimeout(() => {
+        currentIndex = (currentIndex - 1 + filteredDeck.length) % filteredDeck.length;
+        renderCard();
+      }, 120);
+    }
+
+    function markCard(status) {
+      if (filteredDeck.length === 0) return;
+      const item = filteredDeck[currentIndex];
+      progress[item.id] = status;
+      saveProgress();
+
+      const statusFilter = document.getElementById('status-select').value;
+      if (statusFilter !== 'all') {
+        applyFilters();
+      } else {
+        renderCard();
+        nextCard();
+      }
+    }
+
+    function shuffleDeck() {
+      for (let i = filteredDeck.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [filteredDeck[i], filteredDeck[j]] = [filteredDeck[j], filteredDeck[i]];
+      }
+      currentIndex = 0;
+      isFlipped = false;
+      updateFlipUI();
+      renderCurrentView();
+    }
+
+    function toggleReverseCards() {
+      reverseMode = !reverseMode;
+      document.getElementById('reverse-btn').textContent = reverseMode ? 'Сначала: Определение' : 'Сначала: Термин';
+      isFlipped = false;
+      updateFlipUI();
+      renderCard();
+    }
+
+    function resetProgress() {
+      if (confirm('Сбросить прогресс по всем карточкам?')) {
+        progress = {};
+        saveProgress();
+        applyFilters();
+      }
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      document.getElementById('view-cards').classList.toggle('hidden', mode !== 'cards');
+      document.getElementById('view-quiz').classList.toggle('hidden', mode !== 'quiz');
+      document.getElementById('view-list').classList.toggle('hidden', mode !== 'list');
+
+      ['cards', 'quiz', 'list'].forEach(m => {
+        const btn = document.getElementById(`mode-${m}-btn`);
+        if (m === mode) {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-indigo-600 text-white shadow transition';
+        } else {
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-300 hover:text-white transition';
+        }
+      });
+
+      renderCurrentView();
+    }
+
+    // Quiz Mode
+    function generateQuizQuestion() {
+      const pool = filteredDeck.length >= 4 ? filteredDeck : ALL_TERMS;
+      const correctItem = pool[Math.floor(Math.random() * pool.length)];
+
+      // Pick 3 distractors
+      const distractors = [];
+      const candidates = ALL_TERMS.filter(t => t.id !== correctItem.id);
+      while (distractors.length < 3 && candidates.length > 0) {
+        const idx = Math.floor(Math.random() * candidates.length);
+        distractors.push(candidates.splice(idx, 1)[0]);
+      }
+
+      const options = [correctItem, ...distractors].sort(() => Math.random() - 0.5);
+
+      document.getElementById('quiz-topic').textContent = `${correctItem.c} (${correctItem.s})`;
+      document.getElementById('quiz-question').textContent = correctItem.d;
+
+      const feedback = document.getElementById('quiz-feedback');
+      feedback.className = 'hidden mt-5 p-4 rounded-xl text-sm';
+
+      const optionsContainer = document.getElementById('quiz-options');
+      optionsContainer.innerHTML = '';
+
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left px-4 py-3.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-100 text-sm sm:text-base font-medium transition';
+        btn.textContent = opt.t;
+        btn.onclick = () => handleQuizAnswer(btn, opt.id === correctItem.id, correctItem, optionsContainer);
+        optionsContainer.appendChild(btn);
+      });
+    }
+
+    function handleQuizAnswer(clickedBtn, isCorrect, correctItem, container) {
+      Array.from(container.children).forEach(btn => {
+        btn.disabled = true;
+        if (btn.textContent === correctItem.t) {
+          btn.className = 'w-full text-left px-4 py-3.5 rounded-xl bg-emerald-500/20 border-2 border-emerald-500 text-emerald-200 text-sm sm:text-base font-semibold';
+        }
+      });
+
+      quizTotal++;
+      const feedback = document.getElementById('quiz-feedback');
+      if (isCorrect) {
+        quizCorrect++;
+        progress[correctItem.id] = 'known';
+        saveProgress();
+        feedback.textContent = `Верно! «${correctItem.t}» отмечено как выученное.`;
+        feedback.className = 'mt-5 p-4 rounded-xl text-sm bg-emerald-500/10 border border-emerald-500/30 text-emerald-300';
+      } else {
+        clickedBtn.className = 'w-full text-left px-4 py-3.5 rounded-xl bg-rose-500/20 border-2 border-rose-500 text-rose-200 text-sm sm:text-base font-medium';
+        progress[correctItem.id] = 'hard';
+        saveProgress();
+        feedback.textContent = `Неверно. Правильный ответ: ${correctItem.t}. Добавлено в список «Повторить».`;
+        feedback.className = 'mt-5 p-4 rounded-xl text-sm bg-rose-500/10 border border-rose-500/30 text-rose-300';
+      }
+
+      document.getElementById('quiz-score').textContent = `Верно: ${quizCorrect} / ${quizTotal}`;
+    }
+
+    // List Mode
+    function renderList() {
+      const container = document.getElementById('list-container');
+      container.innerHTML = '';
+
+      if (filteredDeck.length === 0) {
+        container.innerHTML = `<div class="text-center py-12 text-slate-400">Ничего не найдено</div>`;
+        return;
+      }
+
+      filteredDeck.forEach(item => {
+        const st = progress[item.id];
+        const card = document.createElement('div');
+        card.className = 'bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-start justify-between gap-4';
+
+        const left = document.createElement('div');
+        left.className = 'space-y-1.5 flex-1';
+        left.innerHTML = `
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="font-bold text-base sm:text-lg text-indigo-300">${item.t}</span>
+            <span class="text-xs font-mono text-slate-500">${item.s}</span>
+            <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 text-slate-400">${item.c}</span>
+          </div>
+          <p class="text-sm text-slate-200 leading-relaxed">${item.d}</p>
+        `;
+
+        const actions = document.createElement('div');
+        actions.className = 'flex sm:flex-col gap-2 shrink-0';
+
+        const btnKnown = document.createElement('button');
+        btnKnown.textContent = '✓ Знаю';
+        btnKnown.className = `px-3 py-1 rounded-lg text-xs font-medium border transition ${
+          st === 'known'
+            ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300'
+            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+        }`;
+        btnKnown.onclick = () => {
+          progress[item.id] = st === 'known' ? undefined : 'known';
+          saveProgress();
+          renderList();
+        };
+
+        const btnHard = document.createElement('button');
+        btnHard.textContent = '↻ Повторить';
+        btnHard.className = `px-3 py-1 rounded-lg text-xs font-medium border transition ${
+          st === 'hard'
+            ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+            : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white'
+        }`;
+        btnHard.onclick = () => {
+          progress[item.id] = st === 'hard' ? undefined : 'hard';
+          saveProgress();
+          renderList();
+        };
+
+        actions.appendChild(btnKnown);
+        actions.appendChild(btnHard);
+
+        card.appendChild(left);
+        card.appendChild(actions);
+        container.appendChild(card);
+      });
+    }
+
+    // Keyboard shortcuts for fast learning without mouse
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') return;
+      if (currentMode !== 'cards') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        flipCard();
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        nextCard();
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        prevCard();
+      } else if (e.key === '1') {
+        markCard('hard');
+      } else if (e.key === '2') {
+        markCard('known');
+      }
+    });
+
+    // Initialize
+    loadProgress();
+    initTopics();
+    applyFilters();
+  </script>
+</body>
+</html>
